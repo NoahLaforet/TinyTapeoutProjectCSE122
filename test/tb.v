@@ -358,12 +358,13 @@ module tb;
     // =========================================================================
     $display("----------------------------------------");
     $display("Results: %0d passed, %0d failed", pass_count, fail_count);
-    if (fail_count == 0)
+    if (fail_count == 0) begin
       $display("ALL TESTS PASSED");
-    else
+      $finish;
+    end else begin
       $display("SOME TESTS FAILED");
-
-    $finish;
+      $fatal(1, "Test suite failed with %0d failure(s)", fail_count);
+    end
   end
 
 endmodule
