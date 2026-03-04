@@ -1,10 +1,10 @@
 `default_nettype none
-// adapted from .sv to .v from previous use
+// adapted from .sv to .v from previous use in cse125
 /*
  * Copyright (c) 2024 Noah Laforet
  * SPDX-License-Identifier: Apache-2.0
  */
- 
+
 module hex2ssd (
     input  wire [3:0] hex_i,
     output wire [6:0] ssd_o
