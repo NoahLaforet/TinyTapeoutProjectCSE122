@@ -46,9 +46,9 @@ async def test_project(dut):
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 4)
+    await ClockCycles(dut.clk, 10)  # was 4, increase to 10
     dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 1)
+    await ClockCycles(dut.clk, 5)   # was 1, increase to 5
 
     pass_count = 0
     fail_count = 0
@@ -62,7 +62,12 @@ async def test_project(dut):
     def check(label, morse, exp_ssd):
         """Read uo_out and compare against expected 7-seg value."""
         nonlocal pass_count, fail_count
-        raw = int(dut.uo_out.value)
+        try:
+            raw = int(dut.uo_out.value)
+        except ValueError:
+            dut._log.error(f"[FAIL] {label} | input: {morse:8s} | output contains X/Z values (not yet settled)")
+            fail_count += 1
+            return
         got_ssd = raw & 0x7F
         got_err = (raw >> 7) & 1
         if got_ssd == exp_ssd and got_err == 0:
