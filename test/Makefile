@@ -11,7 +11,7 @@ VERILOG_SOURCES += $(PWD)/../src/hexto7seg.v
 ifneq ($(GATES),yes)
   TOPLEVEL = tt_um_morse_to_hex
 else
-  SIM_ARGS += -DGL_TEST -DFUNCTIONAL -DUSE_POWER_PINS -DSIM -DUNIT_DELAY=#1
+  COMPILE_ARGS += -DGL_TEST -DFUNCTIONAL -DUSE_POWER_PINS -DSIM -DUNIT_DELAY=#1
   VERILOG_SOURCES := \
     $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v \
     $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v \
