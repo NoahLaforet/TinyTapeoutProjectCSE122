@@ -1,5 +1,6 @@
 SRC_DIR = $(PWD)/../src
-PDK_ROOT ?= $(HOME)/.volare/sky130A
+PDK_ROOT ?= $(HOME)/.volare
+PDK ?= sky130A
 
 # RTL sources (used by default)
 RTL_SOURCES = \
@@ -9,11 +10,10 @@ RTL_SOURCES = \
 	$(PWD)/tb.v
 
 # Gate-level sources (used when GATES=yes)
-# Copy your hardened netlist from runs/wokwi/results/final/verilog/gl/ to gate_level_netlist.v
 GL_SOURCES = \
 	$(PWD)/gate_level_netlist.v \
-	$(PDK_ROOT)/libs.ref/sky130_fd_sc_hd/verilog/primitives.v \
-	$(PDK_ROOT)/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v \
+	$(PDK_ROOT)/$(PDK)/libs.ref/sky130_fd_sc_hd/verilog/primitives.v \
+	$(PDK_ROOT)/$(PDK)/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v \
 	$(PWD)/tb.v
 
 .PHONY: all clean
