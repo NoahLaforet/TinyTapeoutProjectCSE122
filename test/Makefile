@@ -1,36 +1,38 @@
+# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
+# SPDX-License-Identifier: Apache-2.0
+
+# defaults
+SIM ?= icarus
+TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PDK_ROOT ?= $(HOME)/.volare
-PDK ?= sky130A
+PROJECT_SOURCES = tt_um_morse_to_hex.v morseToHex.v hexto7seg.v
 
-# RTL sources (used by default)
-RTL_SOURCES = \
-	$(SRC_DIR)/tt_um_morse_to_hex.v \
-	$(SRC_DIR)/morseToHex.v \
-	$(SRC_DIR)/hexto7seg.v \
-	$(PWD)/tb.v
-
-# Gate-level sources (used when GATES=yes)
-GL_SOURCES = \
-	$(PWD)/gate_level_netlist.v \
-	$(PDK_ROOT)/$(PDK)/libs.ref/sky130_fd_sc_hd/verilog/primitives.v \
-	$(PDK_ROOT)/$(PDK)/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v \
-	$(PWD)/tb.v
-
-.PHONY: all clean
-
-ifeq ($(GATES), yes)
-SOURCES = $(GL_SOURCES)
-IVFLAGS = -g2005-sv -DFUNCTIONAL -DUNIT_DELAY=\#1 -DUSE_POWER_PINS
+ifneq ($(GATES),yes)
+# RTL simulation:
+SIM_BUILD				= sim_build/rtl
+VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(PROJECT_SOURCES))
 else
-SOURCES = $(RTL_SOURCES)
-IVFLAGS = -g2001
+# Gate level simulation:
+SIM_BUILD				= sim_build/gl
+COMPILE_ARGS    += -DGL_TEST
+COMPILE_ARGS    += -DFUNCTIONAL
+COMPILE_ARGS    += -DUSE_POWER_PINS
+COMPILE_ARGS    += -DSIM
+COMPILE_ARGS    += -DUNIT_DELAY=\#1
+VERILOG_SOURCES += $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v
+VERILOG_SOURCES += $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v
+VERILOG_SOURCES += $(PWD)/gate_level_netlist.v
 endif
 
-all: sim
-	vvp sim
+# Allow sharing configuration between design and testbench via `include`:
+COMPILE_ARGS 		+= -I$(SRC_DIR)
 
-sim: $(SOURCES)
-	iverilog $(IVFLAGS) -o sim $(SOURCES)
+# Include the testbench sources:
+VERILOG_SOURCES += $(PWD)/tb.v
+TOPLEVEL = tb
 
-clean:
-	rm -f sim tb.fst
+# List test modules to run:
+COCOTB_TEST_MODULES = test
+
+# include cocotb's make rules to take care of the simulator setup
+include $(shell cocotb-config --makefiles)/Makefile.sim
