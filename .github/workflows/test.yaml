@@ -10,19 +10,39 @@ jobs:
           submodules: recursive
 
       - name: Install iverilog
-        run: |
-          wget https://github.com/TinyTapeout/iverilog/releases/download/v13.0/iverilog_13.0-1_amd64.deb
-          sudo apt-get update
-          sudo dpkg -i iverilog_13.0-1_amd64.deb
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y iverilog
 
-      - name: Run RTL tests
+      # Set Python up and install cocotb
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python packages
+        shell: bash
+        run: pip install -r test/requirements.txt
+
+      - name: Run tests
         run: |
           cd test
-          make -B
+          make clean
+          make
+          # make will return success even if the test fails, so check for failure in the results.xml
+          ! grep failure results.xml
 
-      - name: Upload waveform
+      - name: Test Summary
+        uses: test-summary/action@v2.3
+        with:
+          paths: "test/results.xml"
+        if: always()
+
+      - name: upload waveform and test results
         if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: test/tb.fst
+          path: |
+            test/tb.fst
+            test/results.xml
+            test/output/*

@@ -1,28 +1,24 @@
 # SPDX-FileCopyrightText: © 2024 Tiny Tapeout
 # SPDX-License-Identifier: Apache-2.0
 
-SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = tt_um_morse_to_hex.v morseToHex.v hexto7seg.v
+SIM ?= icarus
+TOPLEVEL_LANG ?= verilog
+
+VERILOG_SOURCES += $(PWD)/../src/tt_um_morse_to_hex.v
+VERILOG_SOURCES += $(PWD)/../src/morseToHex.v
+VERILOG_SOURCES += $(PWD)/../src/hexto7seg.v
 
 ifneq ($(GATES),yes)
-  VERILOG_SOURCES = $(addprefix $(SRC_DIR)/,$(PROJECT_SOURCES)) $(PWD)/tb.v
-  SIM_FLAGS =
+  TOPLEVEL = tt_um_morse_to_hex
 else
-  VERILOG_SOURCES = \
+  SIM_ARGS += -DGL_TEST -DFUNCTIONAL -DUSE_POWER_PINS -DSIM -DUNIT_DELAY=#1
+  VERILOG_SOURCES := \
     $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v \
     $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v \
-    $(PWD)/gate_level_netlist.v \
-    $(PWD)/tb.v
-  SIM_FLAGS = -DGL_TEST -DFUNCTIONAL -DUSE_POWER_PINS -DSIM -DUNIT_DELAY=\#1
+    $(PWD)/gate_level_netlist.v
+  TOPLEVEL = tt_um_morse_to_hex
 endif
 
-results.xml:
-	mkdir -p sim_build
-	iverilog -g2012 -s tb $(SIM_FLAGS) -I$(SRC_DIR) -o sim_build/sim.vvp $(VERILOG_SOURCES)
-	vvp sim_build/sim.vvp; true
-	echo '<testsuites><testsuite name="tb" tests="1" failures="0"/></testsuites>' > results.xml
+MODULE = test
 
-clean:
-	rm -rf sim_build results.xml tb.fst
-
-.PHONY: clean
+include $(shell cocotb-config --makefiles)/Makefile.sim

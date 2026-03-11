@@ -1,12 +1,3 @@
-<!---
-
-This file is used to generate your project datasheet. Please fill in the information below and delete any unused
-sections.
-
-You can also include images in this folder and reference them in the markdown. Each image must be less than
-512 kb in size, and the combined size of all images must be less than 1 MB.
--->
-
 ## How it works
 
 This project implements a **Morse Code to Hex Translator** on a 7-segment display. The user enters a morse code sequence using two buttons (dot and dash), then presses confirm to decode and display the corresponding hexadecimal digit (0–F).
@@ -77,17 +68,17 @@ Press the dot and/or dash buttons to enter a morse code sequence for any hex dig
 
 ## Testbench
 
-The testbench (`test/tb.v`) is a self-checking Verilog simulation with no external dependencies. It drives the DUT using explicit clock-cycle-level button press sequences and asserts the expected 7-segment output after each confirm.
+The testbench uses **cocotb** (the canonical TinyTapeout test framework) with `test.py` as the sole test driver. `tb.v` is a passive waveform-capture wrapper only — all stimulus and assertions are in Python.
 
-Each button press is modelled as a one-cycle high pulse, consistent with the rising-edge detection in the design:
-```verilog
-@(negedge clk); ui_in[N] = 1;  // assert button
-@(posedge clk);                  // edge detected, state machine acts
-@(negedge clk); ui_in[N] = 0;  // deassert
-@(posedge clk);                  // prev register updates, ready for next press
+Each button press is modelled as a one-cycle high pulse followed by one cycle low, consistent with the rising-edge detection in the design. Because `*_rise = input & ~*_prev`, the rise is detected on the same cycle the input goes high, and cleared the following cycle when `*_prev` catches up:
+```python
+dut.ui_in.value = 0b00000001  # assert dot for one cycle
+await RisingEdge(dut.clk)
+dut.ui_in.value = 0           # deassert; prev updates, ready for next press
+await RisingEdge(dut.clk)
 ```
 
-For gate-level simulation, the testbench conditionally connects `VPWR` and `VGND` power pins to the DUT using `` `ifdef GL_TEST `` and extends the reset hold time to 20 cycles to allow synthesized flip-flops to fully initialize before stimulus begins.
+For gate-level simulation, the Makefile passes `-DGL_TEST -DFUNCTIONAL -DUSE_POWER_PINS -DSIM -DUNIT_DELAY=#1` and points to the sky130 PDK primitives. Reset is held for 20 cycles to allow synthesized flip-flops to fully initialize before stimulus begins.
 
 ### Test Coverage
 
@@ -96,7 +87,7 @@ The testbench contains **17 test cases** covering all possible valid outputs:
 - **16 valid sequences** — one for each hex digit (0–F), checking the exact active-high 7-segment pattern and that the error LED is low.
 - **1 invalid sequence** — four dashes (`----`), which has no morse mapping, checking that the error LED goes high.
 
-Each test checks both the 7-segment value and the error bit. After every test the buffer is cleared with the clear button before the next sequence begins. The testbench exits with `$fatal` (non-zero exit code) if any assertion fails, enabling automatic CI detection of regressions.
+Each test checks both the 7-segment value (`uo_out[6:0]`) and the error bit (`uo_out[7]`). The buffer is cleared before each sequence. Pass/fail is reported via cocotb's standard JUnit XML output (`results.xml`), which the CI workflow checks with `! grep failure results.xml`.
 
 ### Why the Testbench is Sufficient
 
@@ -115,8 +106,8 @@ The project concept, morse encoding scheme, and `hexto7seg` 7-segment encoder (a
 - Wiring the submodules together inside `tt_um_morse_to_hex`, implementing the button edge-detection and shift-register logic
 - Adapting the testbench template to exhaustively test every possible output of the design
 - Converting the test infrastructure to the TinyTapeout CI flow, including fixing the `test/Makefile` to use the correct PDK paths for gate-level simulation
-- Replacing the cocotb-based test workflow with a plain iverilog/vvp flow driven entirely by `tb.v`, eliminating the cocotb dependency and the conflict between parallel simulation drivers
-- Adding `ifdef GL_TEST` conditional power pin connections (`VPWR`/`VGND`) to `tb.v` for gate-level simulation compatibility
-- Extending the reset hold time in `tb.v` to 20 cycles to allow synthesized flip-flops to fully initialize in GL sim
-- Updating the GitHub Actions `test.yml` workflow to install the TinyTapeout custom iverilog build and run the Verilog testbench directly
+- Debugging the cocotb/tb.v conflict where both were driving the DUT simultaneously, causing race conditions and `$fatal` kills
+- Iterating through multiple testbench approaches (pure iverilog/vvp, then reverting to canonical cocotb) to resolve GL test exit code failures
+- Rewriting the testbench as a proper cocotb flow: passive `tb.v` for waveform capture only, all stimulus and assertions in `test.py`
+- Restoring the original TinyTapeout `test.yml` workflow, which correctly uses `! grep failure results.xml` to determine pass/fail rather than the make exit code
 - Updating this document to reflect all infrastructure changes with accurate formatting and descriptions
