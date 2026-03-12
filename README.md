@@ -1,42 +1,42 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
-# Tiny Tapeout Verilog Project Template
+# Morse Code to Hex Translator
 
-- [Read the documentation for project](docs/info.md)
+A TinyTapeout design that lets you enter Morse code sequences using two buttons and displays the decoded hexadecimal digit (0–F) on a 7-segment display.
+
+- [Read the full project documentation](docs/info.md)
+
+## How it works
+
+Enter dots and dashes using `ui_in[0]` (dot) and `ui_in[1]` (dash). Press `ui_in[2]` (confirm) to decode the current sequence and display it on the 7-segment output (`uo_out[6:0]`). Press `ui_in[3]` (clear) to reset and start a new sequence.
+
+If the entered sequence does not match any valid Morse code for 0–F, the error LED (`uo_out[7]`) lights up.
+
+All 16 hex digits are supported using standard International Morse Code:
+
+| Digit | Morse | Digit | Morse |
+| ----- | ----- | ----- | ----- |
+| 0 | `-----` | 8 | `---..` |
+| 1 | `.----` | 9 | `----.` |
+| 2 | `..---` | A | `.-` |
+| 3 | `...--` | B | `-...` |
+| 4 | `....-` | C | `-.-.` |
+| 5 | `.....` | D | `-..` |
+| 6 | `-....` | E | `.` |
+| 7 | `--...` | F | `..-.` |
+
+## External hardware
+
+- 7-segment display on `uo_out[6:0]` (active-high, 1 = segment on)
+- 4 pushbuttons on `ui_in[3:0]` (dot, dash, confirm, clear)
+- Optional error LED on `uo_out[7]`
 
 ## What is Tiny Tapeout?
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
-
-To learn more and get started, visit https://tinytapeout.com.
-
-## Set up your Verilog project
-
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
-
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
-
-## Enable GitHub actions to build the results page
-
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
+Tiny Tapeout is an educational project that makes it easier and cheaper than ever to get your digital designs manufactured on a real chip. To learn more, visit [tinytapeout.com](https://tinytapeout.com).
 
 ## Resources
 
 - [FAQ](https://tinytapeout.com/faq/)
 - [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
 - [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
-
-## What next?
-
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
